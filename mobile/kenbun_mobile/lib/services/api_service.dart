@@ -15,7 +15,7 @@ class ApiService {
 
     // Detect platform-specific default: localhost for web/Windows,
     // device IP for physical devices
-    return 'http://192.168.1.100:8000'; // Placeholder — user should configure
+    return 'http://10.0.2.2:8000'; // Android emulator localhost alias
   }
 
   /// Analyze a single frame sent from the camera.
