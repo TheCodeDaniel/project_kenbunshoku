@@ -58,6 +58,7 @@ fields: frame (image), camera_id (string), timestamp (ISO 8601)
 Response 200:
 { "classification": "familiar|delivery-like|anomalous",
   "reasoning": "short plain-language explanation",
+  "pattern_context": "short recurring-visit note, or empty string",
   "alert_sent": true|false }
 ```
 

@@ -8,23 +8,38 @@ Deployed on Alibaba Cloud (see deploy/). See CLAUDE.md for the API contract.
 """
 from fastapi import FastAPI, UploadFile, Form
 from qwen_client import classify_frame
+from memory_store import init_db, get_pattern_context, record_visit
+from alert_dispatcher import dispatch_alert
 
 app = FastAPI(title="Kenbunshoku Ingestion API")
+
+
+@app.on_event("startup")
+async def startup() -> None:
+    init_db()
 
 
 @app.post("/ingest")
 async def ingest(frame: UploadFile, camera_id: str = Form(...), timestamp: str = Form(...)):
     """
-    Detection in, classification out. Memory/pattern context and alert
-    dispatch land once memory_store and alert_dispatcher are implemented
-    (build order steps 3-4 in CLAUDE.md); for now alert_sent is always False.
+    Classify the frame, check memory for a recurring pattern, dispatch (or
+    suppress) the alert accordingly, then persist this visit for future
+    pattern matching.
     """
     frame_bytes = await frame.read()
     result = classify_frame(frame_bytes)
+    classification = result["classification"]
+    reasoning = result["reasoning"]
+
+    pattern_context = get_pattern_context(camera_id, classification, timestamp)
+    alert_sent = dispatch_alert(camera_id, classification, reasoning, pattern_context)
+    record_visit(camera_id, timestamp, classification, reasoning)
+
     return {
-        "classification": result["classification"],
-        "reasoning": result["reasoning"],
-        "alert_sent": False,
+        "classification": classification,
+        "reasoning": reasoning,
+        "pattern_context": pattern_context,
+        "alert_sent": alert_sent,
     }
 
 
