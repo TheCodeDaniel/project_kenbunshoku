@@ -1,8 +1,8 @@
-# Kenbunshoku
+# Project Kenbunshoku
 
 A camera-agnostic security agent that turns any existing doorbell cam, webcam, or
-IP camera into a system that understands *who's* approaching, not just that
-*something* moved. Built for the Global AI Hackathon Series with Qwen Cloud
+IP camera into a system that understands _who's_ approaching, not just that
+_something_ moved. Built for the Global AI Hackathon Series with Qwen Cloud
 (Track 5: EdgeAgent).
 
 - Detects people approaching via any connected camera
@@ -16,14 +16,14 @@ diagram and full write-up.
 
 ## Repo layout
 
-| Folder | Purpose |
-|---|---|
-| `camera-simulator/` | Test harness — phone acting as an IP camera (not shipped) |
-| `edge-service/` | Dockerized local person/motion detection |
-| `cloud-backend/` | FastAPI backend on Alibaba Cloud — Qwen-VL, memory, alerts |
-| `notification-client/` | Flutter app, receives push alerts |
-| `docs/` | Architecture diagram, submission materials |
-| `scripts/` | Local dev orchestration |
+| Folder                 | Purpose                                                    |
+| ---------------------- | ---------------------------------------------------------- |
+| `camera-simulator/`    | Test harness — phone acting as an IP camera (not shipped)  |
+| `edge-service/`        | Dockerized local person/motion detection                   |
+| `cloud-backend/`       | FastAPI backend on Alibaba Cloud — Qwen-VL, memory, alerts |
+| `notification-client/` | Flutter app, receives push alerts                          |
+| `docs/`                | Architecture diagram, submission materials                 |
+| `scripts/`             | Local dev orchestration                                    |
 
 ## Local dev
 
