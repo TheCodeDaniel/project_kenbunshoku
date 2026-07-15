@@ -13,7 +13,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-PUSH_ENDPOINT = os.environ.get("PUSH_ENDPOINT", "")  # Firebase Cloud Messaging or ntfy.sh
+PUSH_ENDPOINT = os.environ.get("PUSH_ENDPOINT", "")  # an ntfy.sh topic URL, e.g. https://ntfy.sh/<topic>
 REQUEST_TIMEOUT_SECONDS = 5.0
 
 CLASSIFICATION_LABELS = {
@@ -63,7 +63,11 @@ def dispatch_alert(camera_id: str, classification: str, reasoning: str, pattern_
     try:
         response = requests.post(
             PUSH_ENDPOINT,
-            json={"camera_id": camera_id, "message": message},
+            data=message.encode("utf-8"),
+            headers={
+                "Title": _ascii_header(f"Kenbunshoku - {camera_id}"),
+                "Priority": "high" if classification == "anomalous" else "default",
+            },
             timeout=REQUEST_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
@@ -73,3 +77,9 @@ def dispatch_alert(camera_id: str, classification: str, reasoning: str, pattern_
 
     logger.info("alert sent for camera '%s': %s", camera_id, message)
     return True
+
+
+def _ascii_header(value: str) -> str:
+    """HTTP header values must be ASCII/latin-1; sanitize rather than crash
+    on a camera_id or label containing other characters (e.g. an em dash)."""
+    return value.encode("ascii", "replace").decode("ascii")
