@@ -10,6 +10,7 @@ Camera-agnostic: this module should never assume a specific device. The stream
 URL is configuration, not a hardcoded value.
 """
 import logging
+import os
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -17,6 +18,8 @@ from typing import Iterator, Optional
 
 import cv2
 from ultralytics import YOLO
+
+from forwarder import forward_detection
 
 logger = logging.getLogger(__name__)
 
@@ -97,3 +100,16 @@ def watch_stream(
                 )
     finally:
         capture.release()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+
+    stream_url = os.environ.get("STREAM_URL", "")
+    camera_id = os.environ.get("CAMERA_ID", "test-cam-1")
+    if not stream_url:
+        raise SystemExit("STREAM_URL environment variable is required")
+
+    for detection in watch_stream(stream_url, camera_id):
+        result = forward_detection(detection)
+        logger.info("forwarded detection (confidence=%.2f): %s", detection.confidence, result)
