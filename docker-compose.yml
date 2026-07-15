@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  cloud-backend:
+    build: ./cloud-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - QWEN_API_KEY=${QWEN_API_KEY}
+      - PUSH_ENDPOINT=${PUSH_ENDPOINT}
+
+  edge-service:
+    build: ./edge-service
+    depends_on:
+      - cloud-backend
+    environment:
+      - STREAM_URL=${STREAM_URL}
+      - CAMERA_ID=test-cam-1
+      - CLOUD_INGEST_URL=http://cloud-backend:8000/ingest

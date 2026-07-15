@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Env / secrets
+.env
+*.pem
+*_credentials.json
+
+# Flutter
+notification-client/build/
+notification-client/.dart_tool/
+notification-client/.flutter-plugins*
+
+# Data
+*.db
+*.sqlite3
+edge-service/captures/
+cloud-backend/captures/
+
+# OS
+.DS_Store
+
+# Docker
+*.log
