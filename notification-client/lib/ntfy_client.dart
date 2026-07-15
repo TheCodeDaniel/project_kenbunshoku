@@ -66,9 +66,7 @@ class NtfyClient {
 
       _stateController.add(NtfyConnectionState.connected);
 
-      await response.stream.transform(utf8.decoder).transform(const LineSplitter()).forEach((
-        line,
-      ) {
+      await response.stream.transform(utf8.decoder).transform(const LineSplitter()).forEach((line) {
         if (line.trim().isEmpty) return;
         Map<String, dynamic> json;
         try {

@@ -65,10 +65,7 @@ class _EmptyState extends StatelessWidget {
     return const Center(
       child: Padding(
         padding: EdgeInsets.all(24),
-        child: Text(
-          'No alerts yet. Waiting for a visitor detection from cloud-backend…',
-          textAlign: TextAlign.center,
-        ),
+        child: Text('No alerts yet. Waiting for a visitor detection from cloud-backend…', textAlign: TextAlign.center),
       ),
     );
   }
@@ -91,9 +88,7 @@ class _AlertList extends StatelessWidget {
           title: Text(alert.title),
           subtitle: Text(alert.message, maxLines: 2, overflow: TextOverflow.ellipsis),
           trailing: Text(_formatTime(alert.time)),
-          onTap: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => AlertDetailScreen(alert: alert))),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AlertDetailScreen(alert: alert))),
         );
       },
     );
