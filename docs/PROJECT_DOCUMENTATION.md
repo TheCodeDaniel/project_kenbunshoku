@@ -2,10 +2,12 @@
 
 Full write-up: problem, solution, architecture, track alignment, ethics, and
 future work. See `../CLAUDE.md` for the condensed, code-governing version of
-this. The full-formatting Word versions (with the rendered architecture
-diagram) are `Kenbunshoku_Project_Plan.docx`, `Kenbunshoku_Project_Documentation.docx`,
-and `Kenbunshoku_Code_Implementation_Plan.docx`, shared separately outside the repo
-(or add them under docs/ if you want them versioned too).
+this. The fully-formatted versions (with the rendered architecture diagram,
+timelines, and tables) live alongside this file as PDFs:
+
+- `Kenbunshoku_Project_Plan.pdf`
+- `Kenbunshoku_Project_Documentation.pdf`
+- `Kenbunshoku_Code_Implementation_Plan.pdf`
 
 ## Problem
 Traditional cameras answer "was there motion?" not "should I care?" — causing

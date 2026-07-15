@@ -81,5 +81,8 @@ Response 200:
 ## Full project background
 
 Fuller narrative (problem statement, judging-criteria alignment, ethics
-considerations, future work) lives in docs/PROJECT_DOCUMENTATION.md — read that
-for context, but this file is what governs day-to-day coding decisions.
+considerations, future work) lives in docs/PROJECT_DOCUMENTATION.md, with the
+fully-formatted originals as PDFs in the same folder
+(Kenbunshoku_Project_Plan.pdf, Kenbunshoku_Project_Documentation.pdf,
+Kenbunshoku_Code_Implementation_Plan.pdf). Read those for context, but this
+file is what governs day-to-day coding decisions.
