@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 ENV QWEN_API_KEY=""
+ENV QWEN_VL_MODEL="qwen-vl-plus"
 ENV PUSH_ENDPOINT=""
 
 EXPOSE 8000

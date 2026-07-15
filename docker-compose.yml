@@ -7,6 +7,7 @@ services:
       - "8000:8000"
     environment:
       - QWEN_API_KEY=${QWEN_API_KEY}
+      - QWEN_VL_MODEL=${QWEN_VL_MODEL:-qwen-vl-plus}
       - PUSH_ENDPOINT=${PUSH_ENDPOINT}
 
   edge-service:
