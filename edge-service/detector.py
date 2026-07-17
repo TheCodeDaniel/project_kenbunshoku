@@ -11,6 +11,7 @@ URL is configuration, not a hardcoded value.
 """
 import logging
 import os
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 PERSON_CLASS_ID = 0  # COCO class index for "person"
 DEFAULT_CONFIDENCE_THRESHOLD = 0.5
 RECONNECT_DELAY_SECONDS = 2.0
+NO_FRAME_TIMEOUT_SECONDS = 5.0  # how long without a fresh frame before we reconnect
 
 
 @dataclass
@@ -39,6 +41,61 @@ class Detection:
 def load_model(weights: str = "yolov8n.pt") -> YOLO:
     """Load YOLOv8n (open weights, fetched by ultralytics on first use)."""
     return YOLO(weights)
+
+
+class _LatestFrameReader:
+    """
+    Continuously reads from `capture` in a background thread and exposes only
+    the most recently read frame. A slow consumer (model inference + network
+    forwarding, which together can take several seconds per detection) would
+    otherwise process an ever-growing backlog of stale buffered frames, since
+    cv2.VideoCapture.read() pops from its internal buffer in FIFO order, not
+    "what's happening right now." This keeps the buffer permanently drained
+    so the consumer always sees a near-real-time frame.
+    """
+
+    def __init__(self, capture: cv2.VideoCapture):
+        self._capture = capture
+        self._lock = threading.Lock()
+        self._frame = None
+        self._ok = False
+        # Seeded to "now" rather than None so a stream that never produces a
+        # single frame still ages past NO_FRAME_TIMEOUT_SECONDS and triggers
+        # a reconnect, instead of seconds_since_last_frame() reporting 0
+        # forever.
+        self._last_frame_at: float = time.monotonic()
+        self._frames_read = 0
+        self._stopped = False
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def _run(self) -> None:
+        while not self._stopped:
+            ok, frame = self._capture.read()
+            with self._lock:
+                self._ok = ok
+                self._frame = frame
+                if ok:
+                    self._last_frame_at = time.monotonic()
+                    self._frames_read += 1
+            if not ok:
+                time.sleep(0.1)
+
+    def read(self):
+        with self._lock:
+            return self._ok, self._frame
+
+    def frames_read(self) -> int:
+        with self._lock:
+            return self._frames_read
+
+    def seconds_since_last_frame(self) -> float:
+        with self._lock:
+            return time.monotonic() - self._last_frame_at
+
+    def stop(self) -> None:
+        self._stopped = True
+        self._thread.join(timeout=1.0)
 
 
 def watch_stream(
@@ -61,22 +118,31 @@ def watch_stream(
         model = load_model()
 
     capture = cv2.VideoCapture(stream_url)
+    reader = _LatestFrameReader(capture)
+    last_processed_frame_count = 0
     try:
         while True:
-            if not capture.isOpened():
+            if not capture.isOpened() or reader.seconds_since_last_frame() > NO_FRAME_TIMEOUT_SECONDS:
                 logger.warning(
-                    "stream %s not open, retrying in %.1fs", stream_url, RECONNECT_DELAY_SECONDS
+                    "stream %s stalled, reconnecting (retry in %.1fs)",
+                    stream_url,
+                    RECONNECT_DELAY_SECONDS,
                 )
-                time.sleep(RECONNECT_DELAY_SECONDS)
-                capture.open(stream_url)
-                continue
-
-            ok, frame = capture.read()
-            if not ok:
-                logger.warning("failed to read frame from %s, reconnecting", stream_url)
+                reader.stop()
                 capture.release()
                 time.sleep(RECONNECT_DELAY_SECONDS)
                 capture = cv2.VideoCapture(stream_url)
+                reader = _LatestFrameReader(capture)
+                last_processed_frame_count = 0
+                continue
+
+            ok, frame = reader.read()
+            if not ok or frame is None:
+                # Reader hasn't produced a first frame yet (or hit a
+                # transient read failure it's already retrying internally) —
+                # seconds_since_last_frame() above is what decides whether
+                # this is actually a dead stream, so just wait briefly.
+                time.sleep(0.05)
                 continue
 
             results = model.predict(frame, verbose=False)
@@ -92,6 +158,12 @@ def watch_stream(
                 if not ok:
                     logger.warning("failed to encode frame from %s", stream_url)
                     continue
+
+                current_frame_count = reader.frames_read()
+                skipped = max(0, current_frame_count - last_processed_frame_count - 1)
+                logger.info("skipped %d buffered frame(s) since last detection", skipped)
+                last_processed_frame_count = current_frame_count
+
                 yield Detection(
                     frame_bytes=buffer.tobytes(),
                     camera_id=camera_id,
@@ -99,6 +171,7 @@ def watch_stream(
                     confidence=best_confidence,
                 )
     finally:
+        reader.stop()
         capture.release()
 
 

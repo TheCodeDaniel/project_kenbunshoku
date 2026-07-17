@@ -24,11 +24,39 @@ VALID_CLASSIFICATIONS = {"familiar", "delivery-like", "anomalous"}
 
 CLASSIFICATION_PROMPT = """You are a home security context assistant. Given an
 image of a person near a front door/entrance, classify them as one of:
-"familiar", "delivery-like", or "anomalous". Give one short, plain-language
-sentence explaining why. Do not speculate about weapons or make safety
-claims — describe only what is visibly relevant to context (attire, posture,
-carried items, apparent purpose). Respond as JSON: {"classification": "...",
-"reasoning": "..."}."""
+"familiar", "delivery-like", or "anomalous".
+
+Category meanings (base this only on what's visible in this single frame —
+you have no reference photos of who actually lives here, so "familiar" means
+the visit presents as expected and low-concern, not that you recognize the
+person's identity):
+- "familiar": calm, unhurried demeanor; ordinary daytime approach; empty-
+  handed or carrying everyday items (not a package); behavior consistent
+  with someone who has a routine reason to be there.
+- "delivery-like": carrying or holding a package, parcel, or bag consistent
+  with a delivery; may be in uniform; typically brief, task-focused
+  behavior at the door (placing an item down, checking a device, etc.).
+- "anomalous": anything that doesn't clearly fit the above — lingering
+  without clear purpose, unusual hour, concealment of face or items,
+  testing the door/window, or any other visible behavior that doesn't
+  match a routine or delivery visit.
+
+If the visual evidence doesn't clearly support "familiar" or "delivery-like",
+choose "anomalous" rather than guessing — a cautious alert is preferable to
+a missed one.
+
+Examples (illustrative only, not exhaustive):
+- Relaxed posture, walking a known path to the door empty-handed in
+  daylight → familiar.
+- Branded uniform, holding a small parcel, brief interaction at the door →
+  delivery-like.
+- Standing close to the door without facing it, at night, no visible
+  packages or bags → anomalous.
+
+Give one short, plain-language sentence explaining your reasoning. Do not
+speculate about weapons or make safety claims — describe only what is
+visibly relevant to context (attire, posture, carried items, apparent
+purpose). Respond as JSON: {"classification": "...", "reasoning": "..."}."""
 
 
 def classify_frame(frame_bytes: bytes) -> dict:

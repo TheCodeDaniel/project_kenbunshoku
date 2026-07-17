@@ -9,7 +9,7 @@ Doorbell and IP cameras all answer the same narrow question — "was there
 motion?" — not the one that actually matters to a homeowner: "should I care
 about this?" That gap is why camera apps train people to ignore push alerts
 entirely. Kenbunshoku ("the art of perceiving," 見聞色) tries to close that
-gap by adding a layer of visitor *context*, without ever taking the decision
+gap by adding a layer of visitor _context_, without ever taking the decision
 out of the homeowner's hands.
 
 ## What it does
@@ -75,7 +75,7 @@ real hardware against a real network, not from static analysis.
 Real OS-level background push (current notification client holds a
 foreground connection to ntfy.sh, which is fine for a demo, not for daily
 use), TLS on the ingestion endpoint, and richer pattern memory beyond the
-current time-of-day heuristic. Explicitly *not* next: weapon/threat
+current time-of-day heuristic. Explicitly _not_ next: weapon/threat
 detection or any autonomous action — both are deliberate, permanent scope
 cuts, not gaps to fill later.
 

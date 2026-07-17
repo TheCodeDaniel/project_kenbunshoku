@@ -6,8 +6,9 @@ Schema (visits table):
   id, camera_id, timestamp, classification, reasoning
 
 Pattern logic (MVP-simple, not ML): if the same camera_id has seen a similar
-classification at a similar time-of-day window N+ times in the recent window,
-treat it as a "recognized pattern" rather than a fresh unfamiliar visit.
+classification on the same day of week and at a similar time-of-day window
+N+ times in the recent window, treat it as a "recognized pattern" rather
+than a fresh unfamiliar visit.
 """
 import sqlite3
 from contextlib import contextmanager
@@ -15,6 +16,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 DB_PATH = "kenbunshoku_memory.db"
+
+WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 RECENT_WINDOW_DAYS = 14  # how far back to look for recurring visits
 TIME_OF_DAY_WINDOW_HOURS = 1.5  # how close two visits' times-of-day must be to count as "similar"
@@ -56,9 +59,10 @@ def record_visit(camera_id: str, timestamp: str, classification: str, reasoning:
 def get_pattern_context(camera_id: str, classification: str, timestamp: str) -> str:
     """
     Look at this camera's recent visits with the same classification and, if
-    enough of them cluster around the same time-of-day as `timestamp`,
-    return a short context string like "3rd similar visit in the last 14
-    days, usual time window (~09:15)". Returns "" if no pattern is found.
+    enough of them cluster on the same day of week and time-of-day as
+    `timestamp`, return a short context string like "3rd similar visit in
+    the last 14 days, usual Tuesday pattern (~09:15)". Returns "" if no
+    pattern is found.
     """
     current = _parse_timestamp(timestamp)
     if current is None:
@@ -77,16 +81,17 @@ def get_pattern_context(camera_id: str, classification: str, timestamp: str) -> 
         visit_time = _parse_timestamp(row_timestamp)
         if visit_time is None or not (window_start <= visit_time <= current):
             continue
-        if _same_time_of_day(visit_time, current):
+        if visit_time.weekday() == current.weekday() and _same_time_of_day(visit_time, current):
             matches += 1
 
     total_occurrences = matches + 1  # including this visit
     if total_occurrences < PATTERN_MIN_COUNT:
         return ""
 
+    weekday_name = WEEKDAY_NAMES[current.weekday()]
     return (
         f"{_ordinal(total_occurrences)} similar visit in the last {RECENT_WINDOW_DAYS} days, "
-        f"usual time window (~{current.strftime('%H:%M')})"
+        f"usual {weekday_name} pattern (~{current.strftime('%H:%M')})"
     )
 
 
