@@ -38,6 +38,12 @@ def build_alert_message(classification: str, reasoning: str, pattern_context: st
     return message
 
 
+def is_suppressed(classification: str, pattern_context: str) -> bool:
+    """Whether a push would be suppressed for this classification given a
+    recognized recurring pattern (see SUPPRESSIBLE_CLASSIFICATIONS)."""
+    return bool(pattern_context) and classification in SUPPRESSIBLE_CLASSIFICATIONS
+
+
 def dispatch_alert(camera_id: str, classification: str, reasoning: str, pattern_context: str) -> bool:
     """
     Build the alert message and POST it to PUSH_ENDPOINT. Returns whether a
@@ -45,7 +51,7 @@ def dispatch_alert(camera_id: str, classification: str, reasoning: str, pattern_
     or the push failed) — always just a notification, never a control action
     (see CLAUDE.md).
     """
-    if pattern_context and classification in SUPPRESSIBLE_CLASSIFICATIONS:
+    if is_suppressed(classification, pattern_context):
         logger.info(
             "suppressing push for camera '%s': recognized low-priority pattern (%s): %s",
             camera_id,

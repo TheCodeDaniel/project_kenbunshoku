@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 CLOUD_INGEST_URL = os.environ.get("CLOUD_INGEST_URL", "http://localhost:8000/ingest")
 MAX_ATTEMPTS = 3
 INITIAL_BACKOFF_SECONDS = 1.0
-REQUEST_TIMEOUT_SECONDS = 10.0
+REQUEST_TIMEOUT_SECONDS = 25.0  # headroom over qwen_client's own 20s Qwen-VL timeout
 
 
 def forward_detection(detection) -> dict:

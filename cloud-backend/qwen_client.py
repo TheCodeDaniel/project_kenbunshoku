@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 client = OpenAI(
     api_key=os.environ.get("QWEN_API_KEY"),
     base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+    timeout=20.0,
 )
 
 QWEN_VL_MODEL = os.environ.get("QWEN_VL_MODEL", "qwen-vl-plus")

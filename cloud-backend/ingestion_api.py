@@ -6,10 +6,10 @@ patterns, and lets alert_dispatcher decide what to notify.
 
 Deployed on Alibaba Cloud (see deploy/). See CLAUDE.md for the API contract.
 """
-from fastapi import FastAPI, UploadFile, Form
+from fastapi import BackgroundTasks, FastAPI, UploadFile, Form
 from qwen_client import classify_frame
 from memory_store import init_db, get_pattern_context, record_visit
-from alert_dispatcher import dispatch_alert
+from alert_dispatcher import PUSH_ENDPOINT, dispatch_alert, is_suppressed
 
 app = FastAPI(title="Kenbunshoku Ingestion API")
 
@@ -20,11 +20,18 @@ async def startup() -> None:
 
 
 @app.post("/ingest")
-async def ingest(frame: UploadFile, camera_id: str = Form(...), timestamp: str = Form(...)):
+async def ingest(
+    background_tasks: BackgroundTasks,
+    frame: UploadFile,
+    camera_id: str = Form(...),
+    timestamp: str = Form(...),
+):
     """
-    Classify the frame, check memory for a recurring pattern, dispatch (or
-    suppress) the alert accordingly, then persist this visit for future
-    pattern matching.
+    Classify the frame and check memory for a recurring pattern, then return
+    immediately — the actual push (or suppression) and persisting this visit
+    both happen after the response is sent. The edge device only needs the
+    classification; it shouldn't have to wait on a second network hop (the
+    ntfy.sh push) on top of the Qwen-VL call it's already waiting on.
     """
     frame_bytes = await frame.read()
     result = classify_frame(frame_bytes)
@@ -32,8 +39,10 @@ async def ingest(frame: UploadFile, camera_id: str = Form(...), timestamp: str =
     reasoning = result["reasoning"]
 
     pattern_context = get_pattern_context(camera_id, classification, timestamp)
-    alert_sent = dispatch_alert(camera_id, classification, reasoning, pattern_context)
-    record_visit(camera_id, timestamp, classification, reasoning)
+    alert_sent = bool(PUSH_ENDPOINT) and not is_suppressed(classification, pattern_context)
+
+    background_tasks.add_task(dispatch_alert, camera_id, classification, reasoning, pattern_context)
+    background_tasks.add_task(record_visit, camera_id, timestamp, classification, reasoning)
 
     return {
         "classification": classification,
